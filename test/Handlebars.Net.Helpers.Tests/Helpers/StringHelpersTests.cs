@@ -127,6 +127,42 @@ public class StringHelpersTests
         result.Should().Be(expected);
     }
 
+    [Fact]
+    public void First_ReturnsFirstElement()
+    {
+        // Arrange
+        var values = new object[] { "first", "second", "third" };
+
+        // Act
+        var result = _sut.First(values);
+
+        // Assert
+        result.Should().Be("first");
+    }
+
+    [Fact]
+    public void First_ReturnsNullForEmptyCollection()
+    {
+        // Arrange
+        var values = new object[0];
+
+        // Act
+        var result = _sut.First(values);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void First_ThrowsForNullCollection()
+    {
+        // Act
+        Action action = () => _sut.First(null!);
+
+        // Assert
+        action.Should().Throw<ArgumentNullException>();
+    }
+
     [Theory]
     [InlineData("Hello &amp; World", "Hello & World")]
     [InlineData("1 &lt; 2 &gt; 0", "1 < 2 > 0")]
@@ -614,42 +650,6 @@ public class StringHelpersTests
     }
 
     [Fact]
-    public void First_ReturnsFirstElement()
-    {
-        // Arrange
-        var values = new object[] { "first", "second", "third" };
-
-        // Act
-        var result = _sut.First(values);
-
-        // Assert
-        result.Should().Be("first");
-    }
-
-    [Fact]
-    public void First_ReturnsNullForEmptyCollection()
-    {
-        // Arrange
-        var values = Array.Empty<object>();
-
-        // Act
-        var result = _sut.First(values);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void First_ThrowsForNullCollection()
-    {
-        // Act
-        Action action = () => _sut.First(null!);
-
-        // Assert
-        action.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void Last_ReturnsLastElement()
     {
         // Arrange
@@ -666,7 +666,7 @@ public class StringHelpersTests
     public void Last_ReturnsNullForEmptyCollection()
     {
         // Arrange
-        var values = Array.Empty<object>();
+        var values = new object[0];
 
         // Act
         var result = _sut.Last(values);

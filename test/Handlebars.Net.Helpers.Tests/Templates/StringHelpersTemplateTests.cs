@@ -172,6 +172,151 @@ public class StringHelpersTemplateTests
         result.Should().Be(expected);
     }
 
+    [Fact]
+    public void Format_Now()
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile("{{String.Format (DateTime.Now) \"yyyy-MM-dd\"}}");
+
+        // Act
+        var result = action("");
+
+        // Assert
+        result.Should().Be("2020-04-15");
+    }
+
+    [Fact]
+    public void FormatAsString_WithFormat_Now()
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile("test {{String.FormatAsString (DateTime.Now) \"yyyy-MM-dd\"}} abc");
+
+        // Act
+        var result = action("");
+
+        var decodeResult = WrappedString.TryDecode(result, out var decoded);
+
+        // Assert
+        decodeResult.Should().BeTrue();
+        decoded.Should().Be("test 2020-04-15 abc");
+    }
+
+    [Fact]
+    public void FormatAsString_WithoutFormat_Now()
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile("test {{String.FormatAsString (DateTime.Now)}} abc");
+
+        // Act
+        var result = action("");
+
+        var decodeResult = WrappedString.TryDecode(result, out var decoded);
+
+        // Assert
+        decodeResult.Should().BeTrue();
+        decoded.Should().Be("test 04/15/2020 23:59:58 abc");
+    }
+
+    [Fact]
+    public void Format_Template_Now()
+    {
+        // Arrange
+        var model = new
+        {
+            x = DateTimeNow
+        };
+
+        var action = _handlebarsContext.Compile("{{String.Format x \"yyyy-MMM-dd\"}}");
+
+        // Act
+        var result = action(model);
+
+        // Assert
+        result.Should().Be("2020-Apr-15");
+    }
+
+    [Fact]
+    public void FormatAsString_Template_Now()
+    {
+        // Arrange
+        var model = new
+        {
+            x = DateTimeNow
+        };
+
+        var action = _handlebarsContext.Compile("test {{String.FormatAsString x \"yyyy-MMM-dd\"}} abc");
+
+        // Act
+        var result = action(model);
+
+        // Assert
+        var decodeResult = WrappedString.TryDecode(result, out var decoded);
+
+        // Assert
+        decodeResult.Should().BeTrue();
+        decoded.Should().Be("test 2020-Apr-15 abc");
+    }
+
+    [Theory]
+    [InlineData("{{String.First (String.Split \"a<br />b<br />c\" \"<br />\")}}", "a")]
+    [InlineData("{{String.First (String.Split \"Honors Algebra 2<br /><br />More text\" \"<br />\")}}", "Honors Algebra 2")]
+    [InlineData("{{String.First (String.Split \"single\" \";\")}}", "single")]
+    public void FirstWithSplit(string template, string expected)
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile(template);
+
+        // Act
+        var result = action("");
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("{{String.Last (String.Split \"a<br />b<br />c\" \"<br />\")}}", "c")]
+    [InlineData("{{String.Last (String.Split \"single\" \";\")}}", "single")]
+    public void LastWithSplit(string template, string expected)
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile(template);
+
+        // Act
+        var result = action("");
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void FirstWithSplit_FromModel()
+    {
+        // Arrange
+        var model = new
+        {
+            yourField = "Honors Algebra 2<br /><br /><span style=\"background-color: #fbeeb8;\"><strong>Textbook<br /></strong>Algebra and Trigonometry</span>"
+        };
+        var action = _handlebarsContext.Compile("{{String.First (String.Split yourField \"<br />\")}}");
+
+        // Act
+        var result = action(model);
+
+        // Assert
+        result.Should().Be("Honors Algebra 2");
+    }
+
+    [Theory]
+    [InlineData("{{[String.Append] \"foo\"}}")]
+    [InlineData("{{[String.Append] \"foo\" \"bar\" \"bar2\"}}")]
+    public void InvalidNumberOfArgumentsShouldThrowHandlebarsException(string template)
+    {
+        // Arrange
+        var handleBarsAction = _handlebarsContext.Compile(template);
+
+        // Act and Assert
+        Assert.Throws<HandlebarsException>(() => handleBarsAction(""));
+    }
+
     [Theory]
     [InlineData("{{#String.IsString \"Hello\"}}yes{{else}}no{{/String.IsString}}", "yes")]
     [InlineData("{{#String.IsString 1}}yes{{else}}no{{/String.IsString}}", "no")]
@@ -320,18 +465,6 @@ public class StringHelpersTemplateTests
         result.Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData("{{[String.Append] \"foo\"}}")]
-    [InlineData("{{[String.Append] \"foo\" \"bar\" \"bar2\"}}")]
-    public void InvalidNumberOfArgumentsShouldThrowHandlebarsException(string template)
-    {
-        // Arrange
-        var handleBarsAction = _handlebarsContext.Compile(template);
-
-        // Act and Assert
-        Assert.Throws<HandlebarsException>(() => handleBarsAction(""));
-    }
-
     [Fact]
     public void TitleCase_Dynamic()
     {
@@ -364,6 +497,56 @@ public class StringHelpersTemplateTests
 
         // Assert
         result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ToWrappedString_Now()
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile("test {{String.ToWrappedString (DateTime.Now)}} abc");
+
+        // Act
+        var result = action("");
+
+        var decodeResult = WrappedString.TryDecode(result, out var decoded);
+
+        // Assert
+        decodeResult.Should().BeTrue();
+        decoded.Should().Be("test 04/15/2020 23:59:58 abc");
+    }
+
+    [Fact]
+    public void ToWrappedString_Null()
+    {
+        // Arrange
+        var action = _handlebarsContext.Compile("test {{String.ToWrappedString (null)}} abc");
+
+        // Act
+        var result = action("");
+
+        var decodeResult = WrappedString.TryDecode(result, out var decoded);
+
+        // Assert
+        decodeResult.Should().BeTrue();
+        decoded.Should().Be("test  abc");
+    }
+
+    [Fact]
+    public void Truncate()
+    {
+        // Arrange
+        var handlebarsContext = Handlebars.Create();
+        HandlebarsHelpers.Register(handlebarsContext, o =>
+        {
+            o.UseCategoryPrefix = false;
+            o.Categories = [Category.String, Category.Humanizer];
+        });
+        var action = handlebarsContext.Compile("{{Truncate \"This is a long sentence that needs truncating.\" 10 }}");
+
+        // Act
+        var result = action("");
+
+        result.Should().Be("This is a ");
     }
 
     [Fact]
@@ -440,51 +623,6 @@ public class StringHelpersTemplateTests
         result.Should().Be("foobar");
     }
 
-    [Fact]
-    public void Format_Now()
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile("{{String.Format (DateTime.Now) \"yyyy-MM-dd\"}}");
-
-        // Act
-        var result = action("");
-
-        // Assert
-        result.Should().Be("2020-04-15");
-    }
-
-    [Fact]
-    public void FormatAsString_WithFormat_Now()
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile("test {{String.FormatAsString (DateTime.Now) \"yyyy-MM-dd\"}} abc");
-
-        // Act
-        var result = action("");
-
-        var decodeResult = WrappedString.TryDecode(result, out var decoded);
-
-        // Assert
-        decodeResult.Should().BeTrue();
-        decoded.Should().Be("test 2020-04-15 abc");
-    }
-
-    [Fact]
-    public void FormatAsString_WithoutFormat_Now()
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile("test {{String.FormatAsString (DateTime.Now)}} abc");
-
-        // Act
-        var result = action("");
-
-        var decodeResult = WrappedString.TryDecode(result, out var decoded);
-
-        // Assert
-        decodeResult.Should().BeTrue();
-        decoded.Should().Be("test 04/15/2020 23:59:58 abc");
-    }
-
     [Theory]
     [InlineData("foo", "test foo abc")]
     [InlineData("あ", "test あ abc")]
@@ -505,143 +643,5 @@ public class StringHelpersTemplateTests
         // Assert
         decodeResult.Should().BeTrue();
         decoded.Should().Be(expected);
-    }
-
-    [Fact]
-    public void ToWrappedString_Now()
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile("test {{String.ToWrappedString (DateTime.Now)}} abc");
-
-        // Act
-        var result = action("");
-
-        var decodeResult = WrappedString.TryDecode(result, out var decoded);
-
-        // Assert
-        decodeResult.Should().BeTrue();
-        decoded.Should().Be("test 04/15/2020 23:59:58 abc");
-    }
-
-    [Fact]
-    public void ToWrappedString_Null()
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile("test {{String.ToWrappedString (null)}} abc");
-
-        // Act
-        var result = action("");
-
-        var decodeResult = WrappedString.TryDecode(result, out var decoded);
-
-        // Assert
-        decodeResult.Should().BeTrue();
-        decoded.Should().Be("test  abc");
-    }
-
-    [Fact]
-    public void Truncate()
-    {
-        // Arrange
-        var handlebarsContext = Handlebars.Create();
-        HandlebarsHelpers.Register(handlebarsContext, o =>
-        {
-            o.UseCategoryPrefix = false;
-            o.Categories = [Category.String, Category.Humanizer];
-        });
-        var action = handlebarsContext.Compile("{{Truncate \"This is a long sentence that needs truncating.\" 10 }}");
-
-        // Act
-        var result = action("");
-
-        result.Should().Be("This is a ");
-    }
-
-    [Fact]
-    public void Format_Template_Now()
-    {
-        // Arrange
-        var model = new
-        {
-            x = DateTimeNow
-        };
-
-        var action = _handlebarsContext.Compile("{{String.Format x \"yyyy-MMM-dd\"}}");
-
-        // Act
-        var result = action(model);
-
-        // Assert
-        result.Should().Be("2020-Apr-15");
-    }
-
-    [Fact]
-    public void FormatAsString_Template_Now()
-    {
-        // Arrange
-        var model = new
-        {
-            x = DateTimeNow
-        };
-
-        var action = _handlebarsContext.Compile("test {{String.FormatAsString x \"yyyy-MMM-dd\"}} abc");
-
-        // Act
-        var result = action(model);
-
-        // Assert
-        var decodeResult = WrappedString.TryDecode(result, out var decoded);
-
-        // Assert
-        decodeResult.Should().BeTrue();
-        decoded.Should().Be("test 2020-Apr-15 abc");
-    }
-
-    [Theory]
-    [InlineData("{{String.First (String.Split \"a<br />b<br />c\" \"<br />\")}}", "a")]
-    [InlineData("{{String.First (String.Split \"Honors Algebra 2<br /><br />More text\" \"<br />\")}}", "Honors Algebra 2")]
-    [InlineData("{{String.First (String.Split \"single\" \";\")}}", "single")]
-    public void FirstWithSplit(string template, string expected)
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile(template);
-
-        // Act
-        var result = action("");
-
-        // Assert
-        result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("{{String.Last (String.Split \"a<br />b<br />c\" \"<br />\")}}", "c")]
-    [InlineData("{{String.Last (String.Split \"single\" \";\")}}", "single")]
-    public void LastWithSplit(string template, string expected)
-    {
-        // Arrange
-        var action = _handlebarsContext.Compile(template);
-
-        // Act
-        var result = action("");
-
-        // Assert
-        result.Should().Be(expected);
-    }
-
-    [Fact]
-    public void FirstWithSplit_FromModel()
-    {
-        // Arrange
-        var model = new
-        {
-            yourField = "Honors Algebra 2<br /><br /><span style=\"background-color: #fbeeb8;\"><strong>Textbook<br /></strong>Algebra and Trigonometry</span>"
-        };
-        var action = _handlebarsContext.Compile("{{String.First (String.Split yourField \"<br />\")}}");
-
-        // Act
-        var result = action(model);
-
-        // Assert
-        result.Should().Be("Honors Algebra 2");
     }
 }
